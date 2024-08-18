@@ -9,6 +9,7 @@ export interface Expense {
   description?: string;
   paidBy: string;
   paymentMethod: string;
+  type: string
 }
 
 export interface CreateExpenseDTO {
@@ -19,6 +20,7 @@ export interface CreateExpenseDTO {
   description?: string;
   paidBy: string;
   paymentMethod: string;
+  type: string
 }
 
 export interface TotalByProperty {

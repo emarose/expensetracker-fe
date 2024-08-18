@@ -55,11 +55,11 @@ export const updateExpense = async (property: string, id: string, expense: Creat
   }
 };
 
-export const deleteExpense = async (property: string, id: string): Promise<void> => {
+export const deleteExpense = async (id: string): Promise<void> => {
   try {
-    await apiClient.delete(`/expenses/${id}?property=${property}`);
+    await apiClient.delete(`/expenses/${id}`);
   } catch (error) {
-    throw new Error(`Failed to delete expense for ${property} with ID: ${id}`);
+    throw new Error(`Failed to delete expense with ID: ${id}`);
   }
 };
 
