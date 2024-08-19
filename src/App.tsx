@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Depto from "./pages/Depto";
 import Casa from "./pages/Casa";
 import French from "./pages/French";
+import Accounts from "./pages/Accounts";
 
 const App: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const App: React.FC = () => {
         <Route path="/depto" component={Depto} />
         <Route path="/casa" component={Casa} />
         <Route path="/french" component={French} />
+        <Route path="/accounts" component={Accounts} />
       </Switch>
     </Router>
   );

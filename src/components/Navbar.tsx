@@ -17,6 +17,9 @@ const Navbar: React.FC = () => {
         <li>
           <Link to="/french">French</Link>
         </li>
+        <li>
+          <Link to="/accounts">Cuentas</Link>
+        </li>
       </ul>
     </nav>
   );
