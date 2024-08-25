@@ -21,7 +21,30 @@ const Depto: React.FC = () => {
 
   return (
     <div>
-      <h1>Depto Page</h1>
+      <h1>Departamento</h1>
+      <div className="border w-25">
+        <h5>Servicios asociados</h5>
+        <p>
+          <b>Luz:</b>
+          <p>Próximo vencimiento:</p>
+        </p>
+        <p>
+          <b>Gas</b>
+          <p>Próximo vencimiento:</p>
+        </p>
+        <p>
+          <b>Agua</b>
+          <p>Próximo vencimiento:</p>
+        </p>
+        <p>
+          <b>Internet</b>
+        </p>
+        <p>Próximo vencimiento:</p>Medio de pago recomendado: Claro Pay
+        <div>
+          <h5>Administrar servicios</h5>
+          <h5>Administrar medios de pago</h5>
+        </div>
+      </div>
     </div>
   );
 };

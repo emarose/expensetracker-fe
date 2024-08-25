@@ -1,6 +1,6 @@
 export interface Expense {
   _id: string;
-  property: string;
+  property?: string;
   date: string;
   year: number;
   month: number;
@@ -13,7 +13,7 @@ export interface Expense {
 }
 
 export interface CreateExpenseDTO {
-  property: string;
+  property?: string | null;
   date: string;
   amount: number;
   category: string;

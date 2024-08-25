@@ -16,11 +16,15 @@ const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paidBy, setPaidBy] = useState<string>("Ema");
   const [otherPaidBy, setOtherPaidBy] = useState<string>("");
+  const [otherCategory, setOtherCategory] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [amount, setAmount] = useState<number | string>("");
   const [expenseType, setExpenseType] = useState<string>("property");
+
+  const [totalStoreTransactions, setTotalStoreTransactions] = useState(0);
+  useState("0.00");
   const [selectedExpensesPropertyFilter, setSelectedPropertyFilter] =
     useState<string>("");
   const [selectedExpensesTypeFilter, setSelectedExpensesTypeFilter] =
@@ -42,7 +46,7 @@ const Home: React.FC = () => {
   ];
 
   const [totalsByPayer, setTotalsByPayer] = useState<Record<string, number>>({
-    Ema: 0,
+    ema: 0,
     Agus: 0,
     Otro: 0,
   });
@@ -93,14 +97,11 @@ const Home: React.FC = () => {
       const year = new Date().getFullYear();
       let expensesByMonth = await getAllExpensesByYearAndMonth(year, month);
 
-      // Apply property filter if selected
       if (selectedExpensesPropertyFilter) {
         expensesByMonth = expensesByMonth.filter(
           (expense) => expense.property === selectedExpensesPropertyFilter
         );
       }
-
-      // Apply expense type filter if selected
       if (selectedExpensesTypeFilter) {
         expensesByMonth = expensesByMonth.filter(
           (expense) => expense.type === selectedExpensesTypeFilter
@@ -171,9 +172,14 @@ const Home: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (selectedCategory !== "Tienda") {
+      setPaidBy("Agus");
+    }
+
     const newExpense = {
-      property: selectedProperty,
-      category: selectedCategory,
+      property: expenseType === "Personal" ? null : selectedProperty,
+      category: selectedCategory !== "Otro" ? selectedCategory : otherCategory,
       paidBy: paidBy === "Otro" ? otherPaidBy : paidBy,
       paymentMethod,
       date,
@@ -181,6 +187,7 @@ const Home: React.FC = () => {
       amount: Number(amount),
       type: expenseType,
     };
+
     await createExpense(newExpense);
     setSelectedProperty("");
     handleMonthClick(selectedMonth);
@@ -239,6 +246,12 @@ const Home: React.FC = () => {
 
     const propertyTotals = calculateTotalsByProperty(filteredExpenses);
     setTotalsByProperty(propertyTotals);
+
+    const totalStore = filteredExpenses
+      .filter((expense) => expense.category === "Tienda")
+      .reduce((acc, expense) => acc + expense.amount, 0);
+
+    setTotalStoreTransactions(totalStore);
   }, [filteredExpenses]);
 
   const totalExpenses = filteredExpenses.reduce(
@@ -264,8 +277,6 @@ const Home: React.FC = () => {
       {/* NEW EXPENSE FORM */}
       <div className="d-flex w-100 justify-content-between">
         <div className="border my-5 w-50">
-          <h4>Nuevo gasto</h4>
-
           <form onSubmit={handleSubmit}>
             <div>
               <label htmlFor="expenseType">Tipo de gasto</label>
@@ -293,81 +304,100 @@ const Home: React.FC = () => {
                 </select>
               </div>
             )}
-            {expenseType === "property" && (
-              <div>
-                <label htmlFor="category">Categoría</label>
-                <select
-                  id="category"
-                  value={selectedCategory}
-                  onChange={handleCategoryChange}
-                >
-                  <option value="">Selecciona</option>
-                  {selectedProperty === "depto" && (
-                    <option value="Expensas">Expensas</option>
-                  )}
-                  <option value="Luz">Luz</option>
-                  <option value="Gas">Gas</option>
-                  <option value="Agua">Agua</option>
-                  <option value="Internet">Internet</option>
-                </select>
-              </div>
-            )}
 
             <div>
-              <label>Pagado Por</label>
-              <div>
-                <input
-                  type="radio"
-                  id="ema"
-                  name="paidBy"
-                  value="Ema"
-                  checked={paidBy === "Ema"}
-                  onChange={handlePaidByChange}
-                />
-                <label htmlFor="ema">Ema</label>
-              </div>
-              <div>
-                <input
-                  type="radio"
-                  id="agus"
-                  name="paidBy"
-                  value="Agus"
-                  checked={paidBy === "Agus"}
-                  onChange={handlePaidByChange}
-                />
-                <label htmlFor="agus">Agus</label>
-              </div>
-              <div>
-                <input
-                  type="radio"
-                  id="otro"
-                  name="paidBy"
-                  value="Otro"
-                  checked={paidBy === "Otro"}
-                  onChange={handlePaidByChange}
-                />
-                <label htmlFor="otro">Otro</label>
-                {paidBy === "Otro" && (
-                  <input
-                    type="text"
-                    placeholder="Especificar"
-                    value={otherPaidBy}
-                    onChange={(e) => setOtherPaidBy(e.target.value)}
-                    required
-                  />
+              <label htmlFor="category">Categoría</label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+              >
+                <option value="">Selecciona</option>
+                {selectedProperty === "depto" && (
+                  <option value="Expensas">Expensas</option>
                 )}
-              </div>
+                {expenseType === "property" ? (
+                  <>
+                    <option value="Luz">Luz</option>
+                    <option value="Gas">Gas</option>
+                    <option value="Agua">Agua</option>
+                    <option value="Internet">Internet</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Tienda">Tienda</option>
+                    <option value="Otro">Otro</option>
+                  </>
+                )}
+              </select>
+              {selectedCategory === "Otro" && (
+                <input
+                  type="text"
+                  placeholder="Especificar"
+                  value={otherCategory}
+                  onChange={(e) => setOtherCategory(e.target.value)}
+                  required
+                />
+              )}
             </div>
-
-            <div>
-              <label htmlFor="paymentMethod">Método de Pago</label>
-              <input
-                id="paymentMethod"
-                type="text"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              />
-            </div>
+            {selectedCategory !== "Tienda" && (
+              <>
+                <div>
+                  <label>Pagado Por</label>
+                  <div>
+                    <input
+                      type="radio"
+                      id="ema"
+                      name="paidBy"
+                      value="Ema"
+                      checked={paidBy === "Ema"}
+                      onChange={handlePaidByChange}
+                    />
+                    <label htmlFor="ema">Ema</label>
+                  </div>
+                  <div>
+                    <input
+                      type="radio"
+                      id="agus"
+                      name="paidBy"
+                      value="Agus"
+                      checked={paidBy === "Agus"}
+                      onChange={handlePaidByChange}
+                    />
+                    <label htmlFor="agus">Agus</label>
+                  </div>
+                  <div>
+                    <input
+                      type="radio"
+                      id="otro"
+                      name="paidBy"
+                      value="Otro"
+                      checked={paidBy === "Otro"}
+                      onChange={handlePaidByChange}
+                    />
+                    <label htmlFor="otro">Otro</label>
+                    {paidBy === "Otro" && (
+                      <input
+                        type="text"
+                        placeholder="Especificar"
+                        value={otherPaidBy}
+                        onChange={(e) => setOtherPaidBy(e.target.value)}
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="paymentMethod">Método de Pago</label>
+                  <input
+                    id="paymentMethod"
+                    type="text"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <label htmlFor="date">Fecha</label>
@@ -501,9 +531,13 @@ const Home: React.FC = () => {
           <p>
             Total Agus: {totalsByPayer.Agus} ({agusPercentage}%)
           </p>
-          <p>
-            Total Otro: {totalsByPayer.Otro} ({otroPercentage}%)
-          </p>
+          {totalsByPayer.Otro !== 0 && (
+            <p>
+              Total Otro: {totalsByPayer.Otro} ({otroPercentage}%)
+            </p>
+          )}
+          <hr />
+          <p>Total Transacciones de Tienda: {totalStoreTransactions}</p>
         </div>
       </span>
     </div>
