@@ -5,7 +5,8 @@ import {
   getAllExpensesByYearAndMonth,
 } from "../services/expenseService";
 import { Expense } from "../types/expenseTypes";
-import { FaTrash } from "react-icons/fa";
+import { FaEye, FaTrash } from "react-icons/fa";
+import ExpenseModal from "../components/ExpenseModal/ExpenseModal";
 
 const Home: React.FC = () => {
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]);
@@ -23,12 +24,41 @@ const Home: React.FC = () => {
   const [amount, setAmount] = useState<number | string>("");
   const [expenseType, setExpenseType] = useState<string>("property");
 
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [totalStoreTransactions, setTotalStoreTransactions] = useState(0);
   useState("0.00");
   const [selectedExpensesPropertyFilter, setSelectedPropertyFilter] =
     useState<string>("");
   const [selectedExpensesTypeFilter, setSelectedExpensesTypeFilter] =
     useState<string>("");
+
+  type CategoryType = "luz" | "gas" | "agua" | "internet";
+
+  type PropertyType = "casa" | "depto" | "french";
+  type ExpenseType = "property" | "personal";
+
+  const accounts: Record<PropertyType, Record<CategoryType, string>> = {
+    casa: {
+      luz: "123",
+      gas: "456",
+      agua: "789",
+      internet: "",
+    },
+    depto: {
+      luz: "654",
+      gas: "987",
+      agua: "321",
+      internet: "",
+    },
+    french: {
+      luz: "978",
+      gas: "654",
+      agua: "564",
+      internet: "",
+    },
+  };
 
   const months = [
     "Enero",
@@ -44,12 +74,6 @@ const Home: React.FC = () => {
     "Noviembre",
     "Diciembre",
   ];
-
-  const [totalsByPayer, setTotalsByPayer] = useState<Record<string, number>>({
-    ema: 0,
-    Agus: 0,
-    Otro: 0,
-  });
 
   const [totalsByProperty, setTotalsByProperty] = useState<
     Record<string, number>
@@ -161,7 +185,27 @@ const Home: React.FC = () => {
   const handleCategoryChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    setSelectedCategory(event.target.value);
+    const category = event.target.value as CategoryType;
+    setSelectedCategory(category);
+
+    if (selectedProperty && expenseType !== "personal") {
+      const accountNumber =
+        accounts[selectedProperty as PropertyType][category];
+      setDescription(`Cta: ${accountNumber}`);
+    } else {
+      setDescription("");
+    }
+  };
+
+  const handleExpenseTypeChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const expenseType = event.target.value as ExpenseType;
+    setExpenseType(expenseType);
+
+    if (expenseType === "personal") {
+      setDescription("");
+    }
   };
 
   const handlePropertyChange = (
@@ -172,56 +216,47 @@ const Home: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log(selectedCategory);
 
-    if (selectedCategory !== "Tienda") {
+    if (selectedCategory !== "tienda") {
       setPaidBy("Agus");
     }
-
     const newExpense = {
-      property: expenseType === "Personal" ? null : selectedProperty,
-      category: selectedCategory !== "Otro" ? selectedCategory : otherCategory,
-      paidBy: paidBy === "Otro" ? otherPaidBy : paidBy,
+      property: expenseType === "personal" ? null : selectedProperty,
+      category: selectedCategory !== "otro" ? selectedCategory : otherCategory,
+      paidBy: paidBy === "otro" ? otherPaidBy : paidBy,
       paymentMethod,
       date,
       description,
       amount: Number(amount),
       type: expenseType,
     };
-
-    await createExpense(newExpense);
-    setSelectedProperty("");
-    handleMonthClick(selectedMonth);
+    try {
+      await createExpense(newExpense);
+      setSelectedProperty("");
+      handleMonthClick(selectedMonth);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await deleteExpense(id);
-    const updatedExpenses = filteredExpenses.filter(
-      (expense) => expense._id !== id
-    );
-    setFilteredExpenses(updatedExpenses);
+    try {
+      await deleteExpense(id);
+      const updatedExpenses = filteredExpenses.filter(
+        (expense) => expense._id !== id
+      );
+      setFilteredExpenses(updatedExpenses);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handlePaidByChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPaidBy(event.target.value);
-    if (event.target.value !== "Otro") {
+    if (event.target.value !== "otro") {
       setOtherPaidBy("");
     }
-  };
-
-  const calculateTotalsByPayer = (expenses: Expense[]) => {
-    return expenses.reduce(
-      (acc, expense) => {
-        if (expense.paidBy === "Ema") {
-          acc.Ema += expense.amount;
-        } else if (expense.paidBy === "Agus") {
-          acc.Agus += expense.amount;
-        } else {
-          acc.Otro += expense.amount;
-        }
-        return acc;
-      },
-      { Ema: 0, Agus: 0, Otro: 0 }
-    );
   };
 
   const calculateTotalsByProperty = (expenses: Expense[]) => {
@@ -240,37 +275,66 @@ const Home: React.FC = () => {
     );
   };
 
-  useEffect(() => {
-    const totals = calculateTotalsByPayer(filteredExpenses);
-    setTotalsByPayer(totals);
+  const calculateTotalsByTypeAndPayer = (expenses: Expense[]) => {
+    return expenses.reduce(
+      (acc, expense) => {
+        if (expense.type === "property") {
+          acc.propertiesTotal += expense.amount;
+          if (expense.paidBy === "Ema") {
+            acc.propertyEmaTotal += expense.amount;
+          } else if (expense.paidBy === "Agus") {
+            acc.propertyAgusTotal += expense.amount;
+          }
+        } else if (expense.type === "personal") {
+          acc.personalTotal += expense.amount;
+          if (expense.paidBy === "Ema") {
+            acc.personalEmaTotal += expense.amount;
+          } else if (expense.paidBy === "Agus") {
+            acc.personalAgusTotal += expense.amount;
+          }
+        }
+        return acc;
+      },
+      {
+        propertiesTotal: 0,
+        personalTotal: 0,
+        propertyEmaTotal: 0,
+        propertyAgusTotal: 0,
+        personalEmaTotal: 0,
+        personalAgusTotal: 0,
+      }
+    );
+  };
 
+  const {
+    propertiesTotal,
+    personalTotal,
+    propertyEmaTotal,
+    propertyAgusTotal,
+    personalEmaTotal,
+    personalAgusTotal,
+  } = calculateTotalsByTypeAndPayer(filteredExpenses);
+
+  const openModal = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedExpense(null);
+  };
+
+  useEffect(() => {
     const propertyTotals = calculateTotalsByProperty(filteredExpenses);
     setTotalsByProperty(propertyTotals);
 
     const totalStore = filteredExpenses
-      .filter((expense) => expense.category === "Tienda")
+      .filter((expense) => expense.category === "tienda")
       .reduce((acc, expense) => acc + expense.amount, 0);
 
     setTotalStoreTransactions(totalStore);
   }, [filteredExpenses]);
-
-  const totalExpenses = filteredExpenses.reduce(
-    (acc, expense) => acc + expense.amount,
-    0
-  );
-
-  const emaPercentage =
-    totalExpenses > 0
-      ? ((totalsByPayer.Ema / totalExpenses) * 100).toFixed(2)
-      : "0.00";
-  const agusPercentage =
-    totalExpenses > 0
-      ? ((totalsByPayer.Agus / totalExpenses) * 100).toFixed(2)
-      : "0.00";
-  const otroPercentage =
-    totalExpenses > 0
-      ? ((totalsByPayer.Otro / totalExpenses) * 100).toFixed(2)
-      : "0.00";
 
   return (
     <div className="container-fluid">
@@ -283,7 +347,7 @@ const Home: React.FC = () => {
               <select
                 id="expenseType"
                 value={expenseType}
-                onChange={(e) => setExpenseType(e.target.value)}
+                onChange={handleExpenseTypeChange}
               >
                 <option value="property">Propiedad</option>
                 <option value="personal">Personal</option>
@@ -297,10 +361,12 @@ const Home: React.FC = () => {
                   value={selectedProperty}
                   onChange={handlePropertyChange}
                 >
-                  <option value="">Selecciona</option>
-                  <option value="casa">Casa</option>
-                  <option value="depto">Depto</option>
-                  <option value="french">French</option>
+                  <>
+                    <option value="">Selecciona</option>
+                    <option value="casa">Casa</option>
+                    <option value="depto">Depto</option>
+                    <option value="french">French</option>
+                  </>
                 </select>
               </div>
             )}
@@ -313,24 +379,25 @@ const Home: React.FC = () => {
                 onChange={handleCategoryChange}
               >
                 <option value="">Selecciona</option>
-                {selectedProperty === "depto" && (
-                  <option value="Expensas">Expensas</option>
-                )}
+
                 {expenseType === "property" ? (
                   <>
-                    <option value="Luz">Luz</option>
-                    <option value="Gas">Gas</option>
-                    <option value="Agua">Agua</option>
-                    <option value="Internet">Internet</option>
+                    {Object.keys(
+                      accounts[selectedProperty as PropertyType] || {}
+                    ).map((category) => (
+                      <option key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </option>
+                    ))}
                   </>
                 ) : (
                   <>
-                    <option value="Tienda">Tienda</option>
-                    <option value="Otro">Otro</option>
+                    <option value="tienda">Tienda</option>
+                    <option value="otro">Otro</option>
                   </>
                 )}
               </select>
-              {selectedCategory === "Otro" && (
+              {selectedCategory === "otro" && (
                 <input
                   type="text"
                   placeholder="Especificar"
@@ -340,7 +407,7 @@ const Home: React.FC = () => {
                 />
               )}
             </div>
-            {selectedCategory !== "Tienda" && (
+            {selectedCategory !== "tienda" && (
               <>
                 <div>
                   <label>Pagado Por</label>
@@ -371,7 +438,7 @@ const Home: React.FC = () => {
                       type="radio"
                       id="otro"
                       name="paidBy"
-                      value="Otro"
+                      value="otro"
                       checked={paidBy === "Otro"}
                       onChange={handlePaidByChange}
                     />
@@ -475,7 +542,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* EXPENSES TABLE */}
-      <table className=" mt-3">
+      <table className="mt-3">
         <thead>
           <tr>
             <th>Propiedad</th>
@@ -485,7 +552,6 @@ const Home: React.FC = () => {
             <th>Fecha</th>
             <th>Descripción</th>
             <th>Monto</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -508,38 +574,45 @@ const Home: React.FC = () => {
                   <FaTrash />
                 </button>
               </td>
+              <td className="ps-3">
+                <button onClick={() => openModal(expense)}>
+                  <FaEye />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <span className="d-flex gap-5">
-        {/* TOTAL EXPENSES BY PROPERTY*/}
-        <div className="mt-3">
-          <h4>Total impuestos por propiedad:</h4>
-          <p>Total Casa: {totalsByProperty.casa}</p>
-          <p>Total Depto: {totalsByProperty.depto}</p>
-          <p>Total French: {totalsByProperty.french}</p>
+      {/* TOTALS */}
+      <div>
+        <div className="border">
+          <h3>Total Propiedades</h3>
+          <span className="d-flex gap-4">
+            <p>Casa: ${totalsByProperty.casa.toFixed(2)}</p>
+            <p>Depto: ${totalsByProperty.depto.toFixed(2)}</p>
+            <p>French: ${totalsByProperty.french.toFixed(2)}</p>
+          </span>
         </div>
-
-        {/* TOTALS AND PERCENTAGES */}
-        <div className="mt-3">
-          <h4>Porcentajes:</h4>
-          <p>
-            Total Ema: {totalsByPayer.Ema} ({emaPercentage}%)
-          </p>
-          <p>
-            Total Agus: {totalsByPayer.Agus} ({agusPercentage}%)
-          </p>
-          {totalsByPayer.Otro !== 0 && (
-            <p>
-              Total Otro: {totalsByPayer.Otro} ({otroPercentage}%)
-            </p>
-          )}
-          <hr />
-          <p>Total Transacciones de Tienda: {totalStoreTransactions}</p>
+        <hr />
+        <h2>Totales por Tipo y Pagador</h2>
+        <div className="d-flex gap-4">
+          <div>
+            <h3>Total Propiedades: {propertiesTotal.toFixed(2)}</h3>
+            <p>Total Ema en Propiedades: {propertyEmaTotal.toFixed(2)}</p>
+            <p>Total Agus en Propiedades: {propertyAgusTotal.toFixed(2)}</p>
+          </div>
+          <div>
+            <h3>Total Personal: {personalTotal.toFixed(2)}</h3>
+            <p>Total Ema en Personal: {personalEmaTotal.toFixed(2)}</p>
+            <p>Total Agus en Personal: {personalAgusTotal.toFixed(2)}</p>
+            <p>Total Tienda: {totalStoreTransactions.toFixed(2)}</p>
+          </div>
         </div>
-      </span>
+      </div>
+      {isModalOpen && (
+        <ExpenseModal expense={selectedExpense} onClose={closeModal} />
+      )}
     </div>
   );
 };
