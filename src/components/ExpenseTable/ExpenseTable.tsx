@@ -1,49 +1,59 @@
-import React, { useState } from 'react';
+import React from "react";
+import { FaEye, FaTrash } from "react-icons/fa";
+import { Expense } from "../../types/expenseTypes";
 
-const ExpenseTable = ({ expenses:  }) => {
-  const [selectedType, setSelectedType] = useState("property");
+interface ExpensesTableProps {
+  expenses: Expense[];
+  handleDelete: (id: string) => void;
+  openModal: (expense: Expense) => void;
+}
 
-  const filteredExpenses = expenses.filter((expense) => {
-    return selectedType ? expense.type === selectedType : true;
-  });
-
+const ExpensesTable: React.FC<ExpensesTableProps> = ({
+  expenses,
+  handleDelete,
+  openModal,
+}) => {
   return (
-    <div>
-      <label htmlFor="typeFilter">Tipo</label>
-      <select
-        id="typeFilter"
-        value={selectedType}
-        onChange={(e) => setSelectedType(e.target.value)}
-      >
-        <option value="">Todos</option>
-        <option value="property">Propiedad</option>
-        <option value="personal">Personal</option>
-      </select>
-
-      <table>
+    <div className="table-responsive">
+      <table className="mt-3 table table-stripped table-bordered">
         <thead>
           <tr>
             <th>Propiedad</th>
+            <th>Categoría</th>
+            <th>Pagado Por</th>
+            <th>Método de Pago</th>
             <th>Fecha</th>
-            <th>Monto</th>
-            <th>Categoria</th>
             <th>Descripción</th>
-            <th>Pagado por</th>
-            <th>Método de pago</th>
-            {/* Add other headers as needed */}
+            <th>Monto</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filteredExpenses.map((expense) => (
+          {expenses.map((expense) => (
             <tr key={expense._id}>
               <td>{expense.property}</td>
-              <td>{/* Format the date here as needed */}</td>
-              <td>{expense.amount}</td>
               <td>{expense.category}</td>
-              <td>{expense.description}</td>
               <td>{expense.paidBy}</td>
               <td>{expense.paymentMethod}</td>
-              {/* Add other columns as needed */}
+              <td>
+                {`${String(new Date(expense.date).getDate()).padStart(
+                  2,
+                  "0"
+                )}/${String(new Date(expense.date).getMonth() + 1).padStart(
+                  2,
+                  "0"
+                )}`}
+              </td>
+              <td>{expense.description}</td>
+              <td>{expense.amount}</td>
+              <td>
+                <button onClick={() => handleDelete(expense._id)}>
+                  <FaTrash />
+                </button>
+                <button onClick={() => openModal(expense)}>
+                  <FaEye />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -52,4 +62,4 @@ const ExpenseTable = ({ expenses:  }) => {
   );
 };
 
-export default ExpenseTable;
+export default ExpensesTable;
