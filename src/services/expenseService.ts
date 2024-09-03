@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { Expense, CreateExpenseDTO, TotalByProperty } from '../types/expenseTypes';
+import { Expense, ExpenseFormData, TotalByProperty } from '../types/expenseTypes';
 
 export const getAllExpenses = async (): Promise<Expense[]> => {
   try {
@@ -37,7 +37,7 @@ export const getExpenseById = async (property: string, id: string): Promise<Expe
   }
 };
 
-export const createExpense = async (expense: CreateExpenseDTO): Promise<Expense> => {
+export const createExpense = async (expense: ExpenseFormData): Promise<Expense> => {
   try {
     const response = await apiClient.post<Expense>(`/expenses?property=${expense.property}`, expense);
     return response.data;
@@ -46,7 +46,7 @@ export const createExpense = async (expense: CreateExpenseDTO): Promise<Expense>
   }
 };
 
-export const updateExpense = async (property: string, id: string, expense: CreateExpenseDTO): Promise<Expense> => {
+export const updateExpense = async (property: string, id: string, expense: ExpenseFormData): Promise<Expense> => {
   try {
     const response = await apiClient.put<Expense>(`/expenses/${id}?property=${property}`, expense);
     return response.data;
@@ -66,6 +66,17 @@ export const deleteExpense = async (id: string): Promise<void> => {
 export const getTotalByProperty = async (): Promise<TotalByProperty[]> => {
   try {
     const response = await apiClient.get<TotalByProperty[]>('/expenses/totals/byProperty');
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching totals:', error);
+    throw error;
+  }
+};
+export const getTotalsByTypeAndPayer = async (): Promise<TotalByProperty[]> => {
+  try {
+    const response = await apiClient.get<TotalByProperty[]>('/expenses/totals/');
+    console.log("🚀 ~ getTotalsByTypeAndPayer ~ response:", response)
 
     return response.data;
   } catch (error) {

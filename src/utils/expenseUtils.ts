@@ -1,5 +1,3 @@
-// src/utils/expenseUtils.ts
-
 import { Expense } from "../types/expenseTypes";
 
 export const calculateTotalsByProperty = (expenses: Expense[]) => {
@@ -49,7 +47,6 @@ export const calculateTotalsByTypeAndPayer = (expenses: Expense[]) => {
   );
 };
 
-
 export const calculateTotalStoreTransactions = (expenses: Expense[]) => {
   return expenses.reduce((total, expense) => {
     if (expense.category === "tienda") {
@@ -57,4 +54,31 @@ export const calculateTotalStoreTransactions = (expenses: Expense[]) => {
     }
     return total;
   }, 0);
+};
+
+export const formatter = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  minimumFractionDigits: 2,
+});
+
+export const formatPaidBy = (paidBy?: {
+  isDivided?: boolean;
+  paidByAgus?: number;
+  paidByEma?: number;
+  payer?: string;
+}) => {
+  console.log(paidBy);
+
+  if (!paidBy) {
+    return "Unknown";
+  }
+
+  const { isDivided = false, paidByAgus = 0, paidByEma = 0, payer } = paidBy;
+
+  if (isDivided) {
+    return `Agus: ${formatter.format(paidByAgus)} - Ema: ${formatter.format(paidByEma)}`;
+  } else {
+    return payer;
+  }
 };

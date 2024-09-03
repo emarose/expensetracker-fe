@@ -25,13 +25,15 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
   ];
 
   return (
-    <div className="d-flex gap-2 my-3">
+    <div className="d-flex gap-2 my-3 align-self-center">
       {months.map((month, index) => (
         <button
+          className={
+            selectedMonth === index + 1
+              ? "btn btn-dark"
+              : "btn btn-light border"
+          }
           key={index}
-          style={{
-            backgroundColor: selectedMonth === index + 1 ? "darkgray" : "",
-          }}
           onClick={() => onMonthChange(index + 1)}
         >
           {month}

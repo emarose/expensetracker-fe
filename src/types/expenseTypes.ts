@@ -1,46 +1,43 @@
+export interface PaidByObject {
+  Ema: number;
+  Agus: number;
+}
+
 export interface Expense {
   _id: string;
+  category: string;
+  isDivided?: boolean;
+  paidBy: string;
+  paidByAgus?: number;
+  paidByEma?: number;
+  paymentMethod: string;
+  date: string;
+  type: string;
+  description: string;
+  amount: number;
   property?: string;
-  date: string;
-  year?: number;
-  month?: number;
-  amount: number;
-  category: string;
-  description?: string;
-  paidBy: string;
-  paymentMethod: string;
-  type: string
 }
-
-export interface CreateExpenseDTO {
-  property?: string | null;
-  date: string;
-  amount: number;
-  category: string;
-  description?: string;
-  paidBy: string;
-  paymentMethod: string;
-  type: string
-}
-
 export interface TotalByProperty {
   property: string;
   total: number;
 }
+
 export interface ExpenseFormData {
-  expenseType: string;
-  selectedProperty: string;
-  selectedCategory: string;
-  otherCategory: string;
-  paidBy: string;
-  otherPaidBy: string;
+  type: string;
+  property: string;
+  category: string;
+  paidBy?: string | PaidByObject;
   paymentMethod: string;
   date: string;
   description: string;
   amount: number;
+  paidByEma: number;
+  paidByAgus: number;
+  isDivided: boolean;
+  otherCategory?: string;
+  otherPaidBy?: string;
 }
 
 export type CategoryType = "luz" | "gas" | "agua" | "internet";
-
 export type PropertyType = "casa" | "depto" | "french";
 export type ExpenseType = "property" | "personal";

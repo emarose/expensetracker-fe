@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ExpenseModal from "../components/ExpenseModal/ExpenseModal";
 import MonthSelector from "../components/MonthSelector/MonthSelector";
 import ExpenseForm from "../components/ExpenseForm/ExpenseForm";
@@ -7,11 +7,7 @@ import ExpensesTable from "../components/ExpenseTable/ExpenseTable";
 import ExpenseTotals from "../components/ExpenseTotals/ExpenseTotals";
 import { useExpenses } from "../hooks/useExpenses";
 import { Expense } from "../types/expenseTypes";
-import {
-  calculateTotalsByProperty,
-  calculateTotalsByTypeAndPayer,
-  calculateTotalStoreTransactions,
-} from "../utils/expenseUtils";
+import Calendar from "../components/Calendar/Calendar";
 
 const Home: React.FC = () => {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -27,36 +23,15 @@ const Home: React.FC = () => {
     handleDelete,
     handleFormSubmit,
     setSelectedMonth,
+    totalsByProperty,
+    totalStoreTransactions,
+    propertiesTotal,
+    personalTotal,
+    propertyEmaTotal,
+    propertyAgusTotal,
+    personalEmaTotal,
+    personalAgusTotal,
   } = useExpenses(new Date().getMonth() + 1);
-
-  const [totalsByProperty, setTotalsByProperty] = useState({
-    casa: 0,
-    depto: 0,
-    french: 0,
-  });
-  const [totals, setTotals] = useState({
-    propertiesTotal: 0,
-    personalTotal: 0,
-    propertyEmaTotal: 0,
-    propertyAgusTotal: 0,
-    personalEmaTotal: 0,
-    personalAgusTotal: 0,
-    totalStoreTransactions: 0,
-  });
-
-  useEffect(() => {
-    const calculatedTotalsByProperty =
-      calculateTotalsByProperty(filteredExpenses);
-    const calculatedTotals = calculateTotalsByTypeAndPayer(filteredExpenses);
-    const calculatedTotalStoreTransactions =
-      calculateTotalStoreTransactions(filteredExpenses);
-
-    setTotalsByProperty(calculatedTotalsByProperty);
-    setTotals({
-      ...calculatedTotals,
-      totalStoreTransactions: calculatedTotalStoreTransactions,
-    });
-  }, [filteredExpenses]);
 
   const openModal = (expense: Expense) => {
     setSelectedExpense(expense);
@@ -69,9 +44,10 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="container">
-      <ExpenseForm onSubmit={handleFormSubmit} />
-      <MonthSelector
+    <div className="container-fluid d-flex flex-column">
+      {/*  <ExpenseForm onSubmit={handleFormSubmit} /> */}
+      <Calendar />
+      {/* <MonthSelector
         selectedMonth={selectedMonth}
         onMonthChange={setSelectedMonth}
       />
@@ -88,17 +64,18 @@ const Home: React.FC = () => {
       />
       <ExpenseTotals
         totalsByProperty={totalsByProperty}
-        propertiesTotal={totals.propertiesTotal}
-        propertyEmaTotal={totals.propertyEmaTotal}
-        propertyAgusTotal={totals.propertyAgusTotal}
-        personalTotal={totals.personalTotal}
-        personalEmaTotal={totals.personalEmaTotal}
-        personalAgusTotal={totals.personalAgusTotal}
-        totalStoreTransactions={totals.totalStoreTransactions}
+        propertiesTotal={propertiesTotal}
+        propertyEmaTotal={propertyEmaTotal}
+        propertyAgusTotal={propertyAgusTotal}
+        personalTotal={personalTotal}
+        personalEmaTotal={personalEmaTotal}
+        personalAgusTotal={personalAgusTotal}
+        totalStoreTransactions={totalStoreTransactions}
       />
+
       {isModalOpen && (
         <ExpenseModal expense={selectedExpense} onClose={closeModal} />
-      )}
+      )} */}
     </div>
   );
 };
