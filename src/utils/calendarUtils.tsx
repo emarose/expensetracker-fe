@@ -5,7 +5,7 @@ export const getCategoryColor = (category: string): string => {
     case "agua":
       return "bg-primary";
     case "gas":
-      return "bg-danger";
+      return "bg-info";
     case "internet":
       return "bg-success";
     case "celular":

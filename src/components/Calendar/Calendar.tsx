@@ -22,6 +22,7 @@ import EventForm from "./EventForm";
 import EventChip from "./EventChip";
 import UpcomingEvents from "./UpcomingEvents";
 import "./style.css";
+import { BiCheck } from "react-icons/bi";
 
 const Calendar: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -105,7 +106,7 @@ const Calendar: React.FC = () => {
 
         days.push(
           <div
-            style={{ minHeight: 100 }}
+            style={{ minHeight: 100, cursor: "pointer" }}
             className={`col border position-relative ${
               !isSameMonth(day, monthStart)
                 ? "bg-dark-subtle"
@@ -170,7 +171,11 @@ const Calendar: React.FC = () => {
           <EventForm onEventAdded={fetchEvents} />
         </div>
         <div className="col">
-          <UpcomingEvents events={events} />
+          <UpcomingEvents
+            setEvents={setEvents}
+            refreshEvents={fetchEvents}
+            events={events}
+          />
         </div>
       </div>
       <div className="container calendar mb-5">
@@ -181,6 +186,8 @@ const Calendar: React.FC = () => {
           isOpen={modalIsOpen}
           onRequestClose={closeModal}
           selectedDate={selectedDate}
+          refreshEvents={fetchEvents}
+          setEvents={setEvents}
           events={events.filter(
             (event) =>
               selectedDate &&

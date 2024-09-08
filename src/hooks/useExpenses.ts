@@ -38,7 +38,6 @@ export const useExpenses = (initialMonth: number) => {
       const totalStore = expensesByMonth
         .filter((expense) => expense.category === "tienda")
         .reduce((acc, expense) => acc + expense.amount, 0);
-      console.log(propertyTotals);
 
       setTotalStoreTransactions(totalStore);
 

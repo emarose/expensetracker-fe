@@ -49,18 +49,15 @@ export const createEvent = async (event: Omit<CalendarEvent, '_id'>): Promise<Ca
   }
 };
 
-export const updateEvent = async (id: string, event: Partial<CalendarEvent>): Promise<CalendarEvent> => {
-  try {
-    const response = await apiClient.put<CalendarEvent>(`/calendar/events/${id}`, event);
-    return response.data;
-  } catch (error) {
-    throw new Error(`Failed to update event with ID: ${id}`);
-  }
+export const updateEventIsPaid = async (id: string, data: Partial<CalendarEvent>) => {
+  const response = await apiClient.put(`/calendar/events/updateIsPaid/${id}`, data);
+  return response.data;
 };
 
 export const deleteEvent = async (id: string): Promise<void> => {
   try {
-    await apiClient.delete(`/calendar/events/${id}`);
+    const response = await apiClient.delete(`/calendar/events/${id}`);
+    return response.data;
   } catch (error) {
     throw new Error(`Failed to delete event with ID: ${id}`);
   }

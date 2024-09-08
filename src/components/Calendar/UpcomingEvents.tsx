@@ -1,190 +1,128 @@
 import React, { useEffect, useState } from "react";
 import {
-  format,
-  differenceInDays,
-  isBefore,
   addDays,
-  isSameDay,
+  differenceInDays,
+  getDate,
+  getMonth,
+  getYear,
 } from "date-fns";
 import { CalendarEvent } from "../../types/calendarTypes";
-import { getCategoryColor } from "../../utils/calendarUtils";
+import HighlightedEvents from "./HighlightedEvents";
+import UpcomingEventList from "./UpcomingEventList";
+import PastEvents from "./PastEvents";
+import EventModal from "./EventModal";
 
 type UpcomingEventsProps = {
   events: CalendarEvent[];
+  setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
+  refreshEvents: () => void;
 };
 
-const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ events }) => {
-  const [highlightedEvents, setHighlightedEvents] = useState<CalendarEvent[]>(
-    []
-  );
-  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
+const UpcomingEvents: React.FC<UpcomingEventsProps> = ({
+  events,
+  setEvents,
+  refreshEvents,
+}) => {
+  const [highlightedEvents, setHighlightedEvents] = useState<
+    Record<string, CalendarEvent[]>
+  >({});
+  const [upcomingEvents, setUpcomingEvents] = useState<
+    Record<string, CalendarEvent[]>
+  >({});
   const [pastEvents, setPastEvents] = useState<CalendarEvent[]>([]);
+  const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null
+  );
 
   useEffect(() => {
     const today = new Date();
-    const twoWeeksFromNow = addDays(today, 14);
+    const twoWeeksFromNow = addDays(today, 18);
 
-    const { upcoming, past } = events.reduce(
+    const highlightedThreshold = 5;
+
+    const { highlighted, upcoming, past } = events.reduce(
       (acc, event) => {
         const year = event.year ?? today.getFullYear();
         const month = event.month ?? today.getMonth() + 1;
         const day = event.day ?? today.getDate();
 
         const eventDate = new Date(year, month - 1, day);
-        const isUpcoming =
-          isBefore(eventDate, twoWeeksFromNow) &&
-          differenceInDays(eventDate, today) >= 0;
+        const daysUntilEvent = differenceInDays(eventDate, today);
 
         const categorizedEvent = { ...event, date: eventDate };
 
-        if (isUpcoming) {
-          acc.upcoming.push(categorizedEvent);
-        } else if (differenceInDays(eventDate, today) < 0) {
+        if (daysUntilEvent < 0) {
           acc.past.push(categorizedEvent);
+        } else if (daysUntilEvent <= highlightedThreshold) {
+          const dateKey = eventDate.toISOString().split("T")[0];
+          if (!acc.highlighted[dateKey]) {
+            acc.highlighted[dateKey] = [];
+          }
+          acc.highlighted[dateKey].push(categorizedEvent);
+        } else if (daysUntilEvent <= 30) {
+          const dateKey = eventDate.toISOString().split("T")[0];
+          if (!acc.upcoming[dateKey]) {
+            acc.upcoming[dateKey] = [];
+          }
+          acc.upcoming[dateKey].push(categorizedEvent);
         }
 
         return acc;
       },
-      { upcoming: [] as CalendarEvent[], past: [] as CalendarEvent[] }
+      {
+        highlighted: {} as Record<string, CalendarEvent[]>,
+        upcoming: {} as Record<string, CalendarEvent[]>,
+        past: [] as CalendarEvent[],
+      }
     );
 
-    const sortedUpcoming = upcoming.sort(
-      (a, b) => a.date.getTime() - b.date.getTime()
-    );
-
-    if (sortedUpcoming.length > 0) {
-      // Group events by the same date as the first event's date
-      const firstEventDate = sortedUpcoming[0].date;
-      const highlighted = sortedUpcoming.filter((event) =>
-        isSameDay(event.date, firstEventDate)
-      );
-      const remainingEvents = sortedUpcoming.filter(
-        (event) => !isSameDay(event.date, firstEventDate)
-      );
-
-      setHighlightedEvents(highlighted);
-      setUpcomingEvents(remainingEvents);
-    } else {
-      setHighlightedEvents([]);
-      setUpcomingEvents([]);
-    }
-
+    setHighlightedEvents(highlighted);
+    setUpcomingEvents(upcoming);
     setPastEvents(past.sort((a, b) => a.date.getTime() - b.date.getTime()));
   }, [events]);
 
+  const openModal = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedEvent(null);
+    setModalIsOpen(false);
+  };
+
   return (
-    <div className="card p-3">
-      <h5>Próximos Vencimientos:</h5>
-
-      {highlightedEvents.length > 0 && (
-        <div>
-          {highlightedEvents.map((event) => (
-            <div
-              key={event._id}
-              className="list-group-item d-flex justify-content-between align-items-center border border-danger p-2"
-              style={{
-                marginBottom: "10px",
-                borderRadius: "5px",
-                boxShadow: "0 0 5px rgba(0, 0, 0, 0.2)",
-              }}
-            >
-              <div>
-                <strong>{format(new Date(event.date), "dd/MM/yyyy")}</strong>{" "}
-                {event.description} -{" "}
-                <span className="text-muted">
-                  Vence en {differenceInDays(new Date(event.date), new Date())}{" "}
-                  días
-                </span>
-                <div className="mt-1">
-                  <span
-                    className={`badge badge-pill ${getCategoryColor(
-                      event.category
-                    )} me-2`}
-                  >
-                    {event.category}
-                  </span>
-                  <span className="badge badge-pill bg-secondary">
-                    {event.property}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <>
+      <div className="card p-3">
+        <h5 className="text-center">Próximos Vencimientos</h5>
+        <HighlightedEvents
+          highlightedEvents={highlightedEvents}
+          onEventClick={openModal}
+        />
+        <UpcomingEventList
+          upcomingEvents={upcomingEvents}
+          onEventClick={openModal}
+        />
+        {pastEvents.length > 0 && <PastEvents pastEvents={pastEvents} />}
+      </div>
+      {selectedEvent && (
+        <EventModal
+          isOpen={modalIsOpen}
+          onRequestClose={closeModal}
+          selectedDate={selectedEvent.date}
+          refreshEvents={refreshEvents}
+          setEvents={setEvents}
+          events={events.filter(
+            (event) =>
+              selectedEvent &&
+              event.day === getDate(selectedEvent.date) &&
+              event.month === getMonth(selectedEvent.date) + 1 &&
+              event.year === getYear(selectedEvent.date)
+          )}
+        />
       )}
-
-      <ul className="list-group">
-        {upcomingEvents.map((event) => (
-          <li
-            key={event._id}
-            className="list-group-item d-flex justify-content-between align-items-center"
-          >
-            <div>
-              <strong>{format(new Date(event.date), "dd/MM/yyyy")}</strong>{" "}
-              {event.description} -{" "}
-              <span className="text-muted">
-                Vence en {differenceInDays(new Date(event.date), new Date())}{" "}
-                días
-              </span>
-              <div className="mt-1">
-                <span
-                  className={`badge badge-pill ${getCategoryColor(
-                    event.category
-                  )} me-2`}
-                >
-                  {event.category}
-                </span>
-                <span className="badge badge-pill bg-secondary">
-                  {event.property}
-                </span>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {pastEvents.length > 0 && (
-        <>
-          <h5 className="mt-4 text-danger">Fechas Vencidas:</h5>
-          <ul className="list-group">
-            {pastEvents.map((event) => (
-              <li
-                key={event._id}
-                className="list-group-item d-flex justify-content-between align-items-center bg-danger text-white"
-                style={{
-                  borderRadius: "5px",
-                  boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                <div>
-                  <strong>{format(new Date(event.date), "dd/MM/yyyy")}</strong>{" "}
-                  {event.description} -{" "}
-                  <span>
-                    Vencido hace{" "}
-                    {Math.abs(
-                      differenceInDays(new Date(), new Date(event.date))
-                    )}{" "}
-                    días
-                  </span>
-                  <div className="mt-1">
-                    <span
-                      className={`badge badge-pill ${getCategoryColor(
-                        event.category
-                      )} me-2`}
-                    >
-                      {event.category}
-                    </span>
-                    <span className="badge badge-pill bg-secondary">
-                      {event.property}
-                    </span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
+    </>
   );
 };
 
